@@ -1,10 +1,11 @@
 <?php
-// /gpt/chat.php
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 
 header('Content-Type: application/json');
 
-// ✅ Set your API key securely (DO NOT expose this to frontend)
-$api_key = 'sk-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX';
+$api_key = 'sk-XXXXXXXXXXXXXXXXXXXXXXXX'; // make sure this is valid
 
 $input = json_decode(file_get_contents('php://input'), true);
 $prompt = $input['prompt'] ?? '';
@@ -14,7 +15,9 @@ if (!$prompt) {
     exit;
 }
 
-// 🧠 Call ChatGPT via OpenAI API
+// Log input for debugging
+file_put_contents("log.txt", print_r($input, true), FILE_APPEND);
+
 $data = [
     'model' => 'gpt-4',
     'messages' => [
@@ -31,9 +34,15 @@ curl_setopt($ch, CURLOPT_HTTPHEADER, [
 curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
 
 $response = curl_exec($ch);
+$error = curl_error($ch);
 curl_close($ch);
 
+if ($error) {
+    echo json_encode(['reply' => "cURL error: $error"]);
+    exit;
+}
+
 $json = json_decode($response, true);
-$reply = $json['choices'][0]['message']['content'] ?? 'No response';
+$reply = $json['choices'][0]['message']['content'] ?? 'No response from API';
 
 echo json_encode(['reply' => $reply]);
